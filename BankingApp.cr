@@ -1,5 +1,6 @@
-# Creation of a banking app
-# Goal is to create a loop to add and inquire about bank accounts
+# A banking application
+# A loop with a bank, where you can do multiple features with an account
+# Authors: Joey Kitzhaber
 
 class Bank
     @@default_accrue_rate = 0.02
@@ -32,6 +33,11 @@ class Bank
         @accrueRate
     end
 
+    #Adds a cusomter
+    def add_cust(customer_add : Customer)
+        @customer.insert(-1, customer_add)
+    end
+
     #Deletes customers with a given name off the list
     def delete_cust(name : String)
         size = @customer.size
@@ -47,6 +53,11 @@ class Bank
         return delcount
     end
 
+    #Returns the customer list
+    def customer_list
+        @customer
+    end
+
     #tostring method
     def to_s
         return "Bank Name: "+@name
@@ -56,20 +67,25 @@ end
 
 #A module with functions for both Savings and Checking Accounts
 module Account
+    #Returns the balance of an account
+
     def get_balance
         @balance
     end
 
+    #Sets the balance of the account
     def set_balance(bal : Float64)
         @balance = bal
     end
 
+    #Deposits into the account
     def deposit(dep : Float64)
-        @balance += dep
+        @balance = @balance + dep
     end
 
+    #Withdraws from the account
     def withdraw(wit : Float64)
-        @balance -= wit
+        @balance = @balance + wit
     end
 end
 
@@ -77,8 +93,13 @@ end
 class SavingsAccount
     include Account
 
+    #Initializes the savings account with a balance
     def initialize(bal : Float64)
         @balance = bal
+    end
+
+    def accrue(rate : Float64)
+        @balance += @balance * rate
     end
 end
 
@@ -89,30 +110,65 @@ class CheckingAccount
     def initialize(bal : Float64)
         @balance = bal
     end
+
+    def accrue(rate : Float64)
+    end
 end
 
 class Customer
     @@default_name = "Nameless"
+    @@default_checking = CheckingAccount.new(0)
+    @@default_savings = SavingsAccount.new(0)
+    #Initialize customer
     def initialize
         @name = @@default_name
-        @CheckingAccount
-        @SavingsAccount
+        @CheckingAccount = @@default_checking
+        @SavingsAccount = @@default_savings
     end
 
+    #Sets customer name
     def set_name(name : String)
         @name = name
     end
 
+    #Gets customer name
     def get_name
         @name
     end
 
+    #Sets the customers checking account
     def set_checking(c_account : Account)
         @CheckingAccount = c_account   
     end
 
+    #Sets the customers saving account
     def set_saving(s_account : Account)
         @SavingsAccount = s_account
+    end
+
+    #Gets the customers checking account
+    def get_checking
+        @CheckingAccount
+    end
+
+    #gets the customers savings acount
+    def get_saving 
+        @SavingsAccount
+    end
+
+    #Returns the checking balance
+    def get_checking_balance
+        @CheckingAccount.get_balance
+    end
+
+    #returns the savings balance
+    def get_saving_balance
+        @SavingsAccount.get_balance
+    end
+
+    #Tostring method
+    def to_s
+        return "Customer: "+@name+", Checking Balance: "+get_checking_balance.to_s+", Savings Balance: "+get_saving_balance.to_s+"."
     end
 end
 
@@ -122,7 +178,7 @@ while input != "Q" && input != "q"
     puts " "
     puts "Welcome to "+this_bank.get_name+". Please enjoy your stay."
     puts "What is your inquiry?"
-    print "(B)ank settings, (A)ccounts list, (I)nvestment details, (M)ake a deposit/withdraw, (Q)uit : "
+    print "(B)ank settings, (A)ccounts settings, (I)nvestment details, (M)ake a deposit/withdraw, (Q)uit : "
     input = gets.not_nil!
 
     # Bank Settings
@@ -131,8 +187,9 @@ while input != "Q" && input != "q"
         while input != "B" && input != "b"
             puts " "
             puts "What would you like to do with the Bank?"
-            print "(E)dit bank name, (A)dd a customer, (B)ack : "
+            print "(E)dit bank name, (A)dd a customer, (D)elete a customer, (B)ack : "
             input = gets.not_nil!
+            puts " "
             
             #Changing Bank Name
             if input == "E" || input == "e"
@@ -142,45 +199,220 @@ while input != "Q" && input != "q"
             #Add a customer
             elsif input == "A" || input == "a"
                 this_cust = Customer.new
-                print "Add the customer's name: "
-                this_cust.set_name(gets.not_nil!)
-                print "Add "+this_cust.get_name+"'s checking balance: "
-                this_cust.set_checking(CheckingAccount.new(gets.not_nil!.to_f64))
-                print "Add "+this_cust.get_name+"'s saving balance: "
-                this_cust.set_saving(SavingsAccount.new(gets.not_nil!.to_f64))
-                puts "Thank you for successfully adding a customer"
-            
+                print "Add the customer's name (We do not allow duplicates): "
+                customer_name = gets.not_nil!
+
+                #Checks if name is in customers
+                customers = this_bank.customer_list
+                size = customers.size
+                pos = 0
+                contains = false
+                until pos >= size
+                    if customer_name == customers[pos].get_name
+                        contains = true
+                    end
+                    pos += 1
+                end
+
+                #IF the name isn't present in customers
+                if contains == false
+                    this_cust.set_name(customer_name)
+                    print "Add "+this_cust.get_name+"'s checking balance: "
+                    this_cust.set_checking(CheckingAccount.new(gets.not_nil!.to_f64))
+                    print "Add "+this_cust.get_name+"'s saving balance: "
+                    this_cust.set_saving(SavingsAccount.new(gets.not_nil!.to_f64))
+                    this_bank.add_cust(this_cust)
+                    puts "Thank you for successfully adding a customer"
+                else
+                    puts "This name is already in use, returning to previous menu"
+                end
+
+            #Deletes all accounts with input name
+            elsif input == "D" || input == "d" 
+                print "Enter the customer name to be deleted: "
+                input = gets.not_nil!
+#                delcount = this_bank.delete_cust(input)
+#                puts "Successfully deleted "+ delcount.to_s +" accounts."
+                puts "Successfully deleted "+ this_bank.delete_cust(input).to_s + " accounts."
+
             #Returns the user to the main input screen
             elsif input == "B" || input == "b"
                 puts "Returning to main feature..."
+            #Unrecognized input
             else
                 puts "Unrecognized character, please try again."
             end
         end
         input = " "
     end
+
+    # Account settings
     if input == "A" || input == "a"
         input = " "
         while input != "B" && input != "b"
             puts " "
             puts "What would you like to do with accounts?"
-            print "(D)elete a customer and its accounts, (S)how all accounts, (F)ind accounts from name, (B)ack:"
+            print "(S)how all accounts, (F)ind accounts from name, (B)ack:"
             input = gets.not_nil!
-            if input == "D" || input == "d" 
-                puts "WARNING: This will delete ALL customers and accounts with this name"
-                print "Enter the customer name to be deleted: "
-                input = gets.not_nil!
-                delcount = this_bank.delete_cust(input)
-                puts "Successfully deleted "+delcount+" accounts"
-            elsif input == "S" || input == "s"
+            puts " "
+            
+            #Displays every customer + account
+            if input == "S" || input == "s"
+                puts "Displaying the full list of accounts: "
+                display = this_bank.customer_list
+                size = display.size
+                pos = 0
+                until pos >= size
+                    puts display[pos].to_s
+                    pos += 1
+                end
 
+            #Displays every customer + account from an input name
             elsif input == "F" || input == "f"
+                print "Please enter the name of the account you wish to see: "
+                name = gets.not_nil!
+                display = this_bank.customer_list
+                size = display.size
+                pos = 0
+                until pos >= size
+                    if name == display[pos].get_name
+                        puts display[pos].to_s
+                    end
+                    pos += 1
+                end
             
+            #returns to the original program
             elsif input == "B" || input == "b"
-            
+                puts "Returning to main feature..."
+            #Unrecognized input
+            else
+                puts "Unrecognized character, please try again."
             end
         end
     input = " "
     end
+
+    #Investment details
+    if input == "I" || input == "i"
+        input = " "
+        while input != "B" && input != "b"
+            puts " "
+            puts "What would you like to see in investments?"
+            print "(C)hange accruement rate, (A)ccrue, (B)ack: "
+            input = gets.not_nil!
+
+            #Change the accruement rate
+            if input == "C" || input == "c"
+
+            #Accrue every savings account balance (NOT CHECKING ACCOUNTS)
+            elsif input == "A" || input == 'a'
+
+            #returns to the original program
+            elsif input == "B" || input == "b"
+                puts "Returning to main feature..."
+            #Unrecognized input
+            else
+                puts "Unrecognized character, please try again."
+            end
+        end
+    input = " "
+    end
+
+    
+    #Deposit or withdrawal
+    if input == "M" || input == "m"
+        input = " "
+        while input != "B" && input != "b"
+            puts " "
+            puts "Deposit or Withdraw?"
+            print "(D)eposit, (W)ithdraw, (B)ack: "
+            input = gets.not_nil!
+            
+            #Make a Deposit
+            if input == "D" || input == "d"
+                puts " "
+                print "What's your account name? "
+                accname = gets.not_nil!
+                print "Deposit into (S)avings or (C)hecking? "
+                input = gets.not_nil!
+                print "How much would you like to deposit? "
+                dep = gets.not_nil!.to_f64
+
+                #Savings
+                if input == "S" || input == "s"
+                    customers = this_bank.customer_list
+                    size = customers.size
+                    pos = 0
+                    until pos >= size
+                        if accname == customers[pos].get_name
+                            customers[pos].get_saving.deposit(dep)
+                        end
+                        pos += 1
+                    end
+                #Checking
+                elsif input == "C" || input == "c"
+                    customers = this_bank.customer_list
+                    size = customers.size
+                    pos = 0
+                    until pos >= size
+                        if accname == customers[pos].get_name
+                            customers[pos].get_checking.deposit(dep)
+                        end
+                        pos += 1
+                    end
+                #unrecognized char
+                else
+                    puts "Unrecognized character, returning to previous menu."
+                end
+            #Withdraw
+            elsif input == "W" || input == "w"
+                puts " "
+                print "What's your account name? "
+                accname = gets.not_nil!
+                print "Withdraw from (S)avings or (C)hecking? "
+                input = gets.not_nil!
+                print "How much would you like to withdraw? "
+                wit = gets.not_nil!.to_f64
+
+                #Savings
+                if input == "S" || input == "s"
+                    customers = this_bank.customer_list
+                    size = customers.size
+                    pos = 0
+                    until pos >= size
+                        if accname == customers[pos].get_name
+                            customers[pos].get_saving.withdraw(wit)
+                        end
+                        pos += 1
+                    end
+                #Checking
+                elsif input == "C" || input == "c"
+                    customers = this_bank.customer_list
+                    size = customers.size
+                    pos = 0
+                    until pos >= size
+                        if accname == customers[pos].get_name
+                            customers[pos].get_checking.withdraw(wit)
+                        end
+                        pos += 1
+                    end
+                #unrecognized char
+                else
+                    puts "Unrecognized character, returning to previous menu."
+                end
+            #returns to the original program
+            elsif input == "B" || input == "b"
+                puts "Returning to main feature..."
+            #Unrecognized input
+            else
+                puts "Unrecognized character, please try again."
+            end
+        end
+    input = " "
+    end
+
+    
 end
 
+puts " "
+puts "Thank you for using our banking tool."
