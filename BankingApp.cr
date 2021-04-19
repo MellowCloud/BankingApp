@@ -170,8 +170,8 @@ while input != "Q" && input != "q"
                 puts "WARNING: This will delete ALL customers and accounts with this name"
                 print "Enter the customer name to be deleted: "
                 input = gets.not_nil!
-                this_bank.delete_cust(input)
-
+                delcount = this_bank.delete_cust(input)
+                puts "Successfully deleted "+delcount+" accounts"
             elsif input == "S" || input == "s"
 
             elsif input == "F" || input == "f"
