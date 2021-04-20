@@ -2,6 +2,8 @@
 # A loop with a bank, where you can do multiple features with an account
 # Authors: Joey Kitzhaber
 
+#Class definitions
+
 class Bank
     @@default_accrue_rate = 0.02
     @@default_bank_name = "Bank of Doves"
@@ -10,7 +12,7 @@ class Bank
     def initialize(bank_name : String, accrue_rate : Float64)
         @name = bank_name || @@default_bank_name
         @customer = [] of Customer
-        @accrueRate = accrue_rate || @@default_accrue_rate
+        @accruement_rate = accrue_rate || @@default_accrue_rate
     end
 
     #Changes the name of the bank from the default
@@ -25,12 +27,12 @@ class Bank
 
     #Changes the Bank's accrue rate
     def set_accrue_rate(rate : Float64)
-        @accrueRate = rate
+        @accruement_rate = rate
     end
 
     #Gets the present accrue rate
     def get_accrue_rate
-        @accrueRate
+        @accruement_rate
     end
 
     #Adds a cusomter
@@ -99,7 +101,8 @@ class SavingsAccount
     end
 
     def accrue(rate : Float64)
-        @balance += @balance * rate
+        rounded = @balance + (@balance * rate)
+        @balance = rounded.round(2)
     end
 end
 
@@ -172,6 +175,9 @@ class Customer
     end
 end
 
+
+
+##Main program loop:
 this_bank = Bank.new("Bank of Doves",0.02)
 input = " "
 while input != "Q" && input != "q"
@@ -218,9 +224,9 @@ while input != "Q" && input != "q"
                 if contains == false
                     this_cust.set_name(customer_name)
                     print "Add "+this_cust.get_name+"'s checking balance: "
-                    this_cust.set_checking(CheckingAccount.new(gets.not_nil!.to_f64))
+                    this_cust.set_checking(CheckingAccount.new(gets.not_nil!.to_f64.round(2)))
                     print "Add "+this_cust.get_name+"'s saving balance: "
-                    this_cust.set_saving(SavingsAccount.new(gets.not_nil!.to_f64))
+                    this_cust.set_saving(SavingsAccount.new(gets.not_nil!.to_f64.round(2)))
                     this_bank.add_cust(this_cust)
                     puts "Thank you for successfully adding a customer"
                 else
@@ -231,8 +237,6 @@ while input != "Q" && input != "q"
             elsif input == "D" || input == "d" 
                 print "Enter the customer name to be deleted: "
                 input = gets.not_nil!
-#                delcount = this_bank.delete_cust(input)
-#                puts "Successfully deleted "+ delcount.to_s +" accounts."
                 puts "Successfully deleted "+ this_bank.delete_cust(input).to_s + " accounts."
 
             #Returns the user to the main input screen
@@ -252,7 +256,7 @@ while input != "Q" && input != "q"
         while input != "B" && input != "b"
             puts " "
             puts "What would you like to do with accounts?"
-            print "(S)how all accounts, (F)ind accounts from name, (B)ack:"
+            print "(S)how all accounts, (F)ind accounts from name, (B)ack: "
             input = gets.not_nil!
             puts " "
             
@@ -300,13 +304,24 @@ while input != "Q" && input != "q"
             puts "What would you like to see in investments?"
             print "(C)hange accruement rate, (A)ccrue, (B)ack: "
             input = gets.not_nil!
+            puts " "
 
             #Change the accruement rate
             if input == "C" || input == "c"
-
+                print "What would you like to change the accruement rate to: "
+                input = gets.not_nil!.to_f64.round(2)
+                this_bank.set_accrue_rate(input)
+                puts "Accruement rate set to: "+input.to_s
             #Accrue every savings account balance (NOT CHECKING ACCOUNTS)
-            elsif input == "A" || input == 'a'
-
+            elsif input == "A" || input == "a"
+                customers = this_bank.customer_list
+                size = customers.size
+                pos = 0
+                until pos >= size
+                    customers[pos].get_saving.accrue(this_bank.get_accrue_rate)
+                    pos += 1
+                end
+                puts "Successfully accrued all savings accounts"
             #returns to the original program
             elsif input == "B" || input == "b"
                 puts "Returning to main feature..."
@@ -327,7 +342,8 @@ while input != "Q" && input != "q"
             puts "Deposit or Withdraw?"
             print "(D)eposit, (W)ithdraw, (B)ack: "
             input = gets.not_nil!
-            
+            puts " "
+
             #Make a Deposit
             if input == "D" || input == "d"
                 puts " "
@@ -336,7 +352,7 @@ while input != "Q" && input != "q"
                 print "Deposit into (S)avings or (C)hecking? "
                 input = gets.not_nil!
                 print "How much would you like to deposit? "
-                dep = gets.not_nil!.to_f64
+                dep = gets.not_nil!.to_f64.round(2)
 
                 #Savings
                 if input == "S" || input == "s"
@@ -372,7 +388,7 @@ while input != "Q" && input != "q"
                 print "Withdraw from (S)avings or (C)hecking? "
                 input = gets.not_nil!
                 print "How much would you like to withdraw? "
-                wit = gets.not_nil!.to_f64
+                wit = gets.not_nil!.to_f64.round(2)
 
                 #Savings
                 if input == "S" || input == "s"
